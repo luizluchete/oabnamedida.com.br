@@ -1,0 +1,315 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model account_delete_history {
+  id         String   @id(map: "PK_8f70fafe954fff6d483e95baf93") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email      String   @db.VarChar
+  created_at DateTime @default(now()) @db.Timestamp(6)
+}
+
+model answers {
+  id         String    @id(map: "PK_9c32cec6c71e06da0254f2226c6") @db.VarChar
+  answer     String    @db.VarChar
+  comment    String    @db.VarChar
+  correct    Boolean   @default(false)
+  questionId String    @db.VarChar
+  questions  questions @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_questions")
+}
+
+model categories {
+  id                   String                 @id(map: "PK_24dbc6126a28ff948da33e97d3b") @db.VarChar
+  name                 String                 @unique(map: "UQ_8b0be371d28245da6e4f4b61878") @db.VarChar
+  status               Boolean                @default(true)
+  pathImage            String?                @db.VarChar
+  isCategory           Boolean?               @default(true)
+  index                Int?
+  chapters             chapters[]
+  goals_categories     goals_categories[]
+  simulated_quiz_items simulated_quiz_items[]
+  users_categories     users_categories[]
+}
+
+model chapters {
+  id                     String           @id(map: "PK_a2bbdbb4bdc786fe0cb0fcfc4a0") @db.VarChar
+  name                   String           @db.VarChar
+  numberQuestionsForQuiz Int
+  numberChapter          Int
+  status                 Boolean          @default(true)
+  categoryId             String           @db.VarChar
+  important              Boolean?         @default(false)
+  categories             categories       @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_chapters_categories")
+  flash_cards            flash_cards[]
+  goals_chapters         goals_chapters[]
+  questions              questions[]
+  quizzes                quizzes[]
+  users_chapters         users_chapters[]
+}
+
+model errors {
+  id         String   @id(map: "PK_f1ab2df89a11cd21f48ff90febb") @db.VarChar
+  stackError String   @db.VarChar
+  created_at DateTime @default(now()) @db.Timestamp(6)
+}
+
+model exams {
+  id        String      @id(map: "PK_b43159ee3efa440952794b4f53e") @db.VarChar
+  name      String      @unique(map: "UQ_83a81eca223f7867d52ce4742e1") @db.VarChar
+  status    Boolean     @default(true)
+  questions questions[]
+  quizzes   quizzes[]
+}
+
+model flash_cards {
+  id         String          @id(map: "PK_4c6e92c0625ff6d82bb774f84e4") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  back       String          @db.VarChar
+  front      String          @db.VarChar
+  article    String?         @db.VarChar
+  chapterId  String          @db.VarChar
+  status     Boolean?        @default(true)
+  difficulty enumDifficulty? @default(easy)
+  type       enumType?       @default(lei)
+  chapters   chapters        @relation(fields: [chapterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "fk_flash_cards_chapters")
+}
+
+model goals {
+  id               String             @id(map: "PK_26e17b251afab35580dff769223") @db.VarChar
+  name             String             @db.VarChar
+  color            String             @db.VarChar
+  status           Boolean
+  index            Int?
+  goals_categories goals_categories[]
+  goals_chapters   goals_chapters[]
+}
+
+model goals_categories {
+  id         String     @id(map: "PK_98b097aeda882921e16eb158689") @db.VarChar
+  goalId     String     @db.VarChar
+  categoryId String     @db.VarChar
+  goals      goals      @relation(fields: [goalId], references: [id], onDelete: Cascade, map: "FK_goals")
+  categories categories @relation(fields: [categoryId], references: [id], onDelete: Cascade, map: "FK_goals_categories")
+}
+
+model goals_chapters {
+  id        String   @id(map: "PK_bc3727a024186ddfd8d6b9d4a7a") @db.VarChar
+  goalId    String   @db.VarChar
+  chapterId String   @db.VarChar
+  goals     goals    @relation(fields: [goalId], references: [id], onDelete: Cascade, map: "FK_goals")
+  chapters  chapters @relation(fields: [chapterId], references: [id], onDelete: Cascade, map: "FK_goals_chapters")
+}
+
+model migrations {
+  id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement())
+  timestamp BigInt
+  name      String @db.VarChar
+}
+
+model purchases_app {
+  id           String   @id(map: "PK_360219d0317003e9220c1c49165") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  type         String   @db.VarChar
+  orderId      String   @db.VarChar
+  productId    String   @db.VarChar
+  purchaseDate DateTime @db.Timestamp(6)
+  expiryDate   DateTime @db.Timestamp(6)
+  userId       String   @db.VarChar
+  users        users    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_purchase_app_users")
+}
+
+model query_result_cache {
+  id         Int     @id(map: "PK_6a98f758d8bfd010e7e10ffd3d3") @default(autoincrement())
+  identifier String? @db.VarChar
+  time       BigInt
+  duration   Int
+  query      String
+  result     String
+
+  @@map("query-result-cache")
+}
+
+model questions {
+  id                  String                @id(map: "PK_08a6d4b0f49ff300bf3a0ca60ac") @db.VarChar
+  question            String                @db.VarChar
+  chapterId           String                @db.VarChar
+  examId              String                @db.VarChar
+  subChapter          String?               @db.VarChar
+  tags                String?               @db.VarChar
+  numberQuestion      Int?
+  status              Boolean?              @default(true)
+  answers             answers[]
+  chapters            chapters              @relation(fields: [chapterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_chapters")
+  exams               exams                 @relation(fields: [examId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_exams")
+  questions_favorites questions_favorites[]
+  questions_results   questions_results[]
+}
+
+model questions_favorites {
+  id         String    @id(map: "PK_2c93d07c47b755aadbbb3e2d8fc") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId     String    @db.VarChar
+  questionId String    @db.VarChar
+  questions  questions @relation(fields: [questionId], references: [id], onDelete: Cascade, map: "FK_questions_questions_favorites")
+  users      users     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "FK_user_questions_favorites")
+
+  @@unique([userId, questionId], map: "UQ_b9489ec82f443b33cf7a54e2fae")
+}
+
+model questions_results {
+  id         String    @id(map: "PK_9fb7147ef9714259f443394b49b") @db.VarChar
+  isRight    Boolean
+  date       DateTime  @db.Timestamp(6)
+  userId     String    @db.VarChar
+  questionId String    @db.VarChar
+  questions  questions @relation(fields: [questionId], references: [id], onDelete: Cascade, map: "FK_quiz_result_questions")
+  users      users     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "FK_user_result_quizzes")
+}
+
+model quizzes {
+  id                    String                  @id(map: "PK_b24f0f7662cf6b3a0e7dba0a1b4") @db.VarChar
+  question              String                  @db.VarChar
+  comment               String                  @db.VarChar
+  article               String?                 @db.VarChar
+  isTrue                Boolean
+  status                Boolean?                @default(true)
+  isPremium             Boolean?                @default(true)
+  chapterId             String                  @db.VarChar
+  examId                String                  @db.VarChar
+  chapters              chapters                @relation(fields: [chapterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_quizzes_chapters")
+  exams                 exams                   @relation(fields: [examId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_quizzes_exams")
+  quizzes_favorites     quizzes_favorites[]
+  quizzes_results       quizzes_results[]
+  temp_quizzes_answered temp_quizzes_answered[]
+}
+
+model quizzes_favorites {
+  id      String  @id(map: "PK_07154e76571c71aca2d18e566f9") @db.VarChar
+  userId  String  @db.VarChar
+  quizId  String  @db.VarChar
+  quizzes quizzes @relation(fields: [quizId], references: [id], onDelete: Cascade, map: "FK_quiz_quizzes_favorites")
+  users   users   @relation(fields: [userId], references: [id], onDelete: Cascade, map: "FK_user_quizzes_favorites")
+
+  @@unique([userId, quizId], map: "UQ_6c65ecfdb2c89ac3fb8339d09fd")
+}
+
+model quizzes_results {
+  id      String   @id(map: "PK_1fada9bc774eed4e425194ba57f") @db.VarChar
+  isRight Boolean
+  date    DateTime @db.Timestamp(6)
+  userId  String   @db.VarChar
+  quizId  String   @db.VarChar
+  quizzes quizzes  @relation(fields: [quizId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_quiz_result_quizzes")
+  users   users    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "FK_user_result_quizzes")
+}
+
+model simulated_quiz {
+  id                   String                 @id(map: "PK_5ed47e1fbb56bb2517de3d7ab02") @db.VarChar
+  description          String                 @db.VarChar
+  status               Boolean                @default(true)
+  simulated_quiz_items simulated_quiz_items[]
+  simulateds_results   simulateds_results[]
+  users_simulateds     users_simulateds[]
+}
+
+model simulated_quiz_items {
+  id             String         @id(map: "PK_dabeaf3b2d7038a8a5483c26ec3") @db.VarChar
+  index          Int?
+  quizQuantity   Int
+  categoryId     String         @db.VarChar
+  simulatedId    String         @db.VarChar
+  categories     categories     @relation(fields: [categoryId], references: [id], onDelete: Cascade, map: "FK_categories_simulated_items_quiz")
+  simulated_quiz simulated_quiz @relation(fields: [simulatedId], references: [id], onDelete: Cascade, map: "FK_simulated_items_quiz")
+}
+
+model simulateds_results {
+  id              String         @id(map: "PK_807f35f425d3ce45e35351ca35a") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  quantityCorrect Int
+  userId          String         @db.VarChar
+  simulatedId     String         @db.VarChar
+  isQuiz          Boolean
+  date            DateTime?      @db.Timestamp(6)
+  users           users          @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_results_simulated_users")
+  simulated_quiz  simulated_quiz @relation(fields: [simulatedId], references: [id], onDelete: Cascade, map: "fk_results_simulateds")
+}
+
+model temp_quizzes_answered {
+  id      String  @id(map: "PK_23bddc12900e4a11aab47e37a99") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId  String  @db.VarChar
+  quizId  String  @db.VarChar
+  quizzes quizzes @relation(fields: [quizId], references: [id], onDelete: Cascade, map: "fk_temp_quizzes_answered_quizzes")
+  users   users   @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_temp_quizzes_answered_users")
+}
+
+model users {
+  id                    String                  @id(map: "PK_a3ffb1c0c8416b9fc6f907b7433") @db.VarChar
+  name                  String                  @db.VarChar
+  email                 String                  @unique(map: "UQ_97672ac88f789774dd47f7c8be3") @db.VarChar
+  password              String                  @db.VarChar
+  accessToken           String?                 @db.VarChar
+  role                  String?                 @db.VarChar
+  passwordResetToken    String?                 @db.VarChar
+  expiresIn             DateTime?               @db.Date
+  createdInMobile       Boolean?                @default(false)
+  type_access           enumTypeAccess?         @default(default)
+  isDisabled            Boolean?                @default(false)
+  purchases_app         purchases_app[]
+  questions_favorites   questions_favorites[]
+  questions_results     questions_results[]
+  quizzes_favorites     quizzes_favorites[]
+  quizzes_results       quizzes_results[]
+  simulateds_results    simulateds_results[]
+  temp_quizzes_answered temp_quizzes_answered[]
+  users_categories      users_categories[]
+  users_chapters        users_chapters[]
+  users_simulateds      users_simulateds[]
+}
+
+model users_categories {
+  id         String     @id(map: "PK_ca950763e4e5572ad6e1502a8b8") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  rating     Decimal    @db.Decimal
+  categoryId String     @db.VarChar
+  userId     String     @db.VarChar
+  categories categories @relation(fields: [categoryId], references: [id], onDelete: Cascade, map: "fk_users_categories")
+  users      users      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_users_users_categories")
+}
+
+model users_chapters {
+  id        String   @id(map: "PK_ebbb261bddcbc406ddc75f810b0") @db.VarChar
+  rating    Decimal  @db.Decimal
+  chapterId String   @db.VarChar
+  userId    String   @db.VarChar
+  chapters  chapters @relation(fields: [chapterId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_chapters")
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "FK_users")
+
+  @@index([userId], map: "IDX_userId__in_users_chapters")
+  @@index([userId, chapterId], map: "IDX_userId_chapterId_in_users_chapters")
+}
+
+model users_simulateds {
+  id             String         @id(map: "PK_a4a1e35cd1c22f0a5199f5f0956") @db.VarChar
+  rating         Decimal        @db.Decimal
+  simulatedId    String         @db.VarChar
+  userId         String         @db.VarChar
+  ratingQuestion Decimal?       @db.Decimal
+  simulated_quiz simulated_quiz @relation(fields: [simulatedId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_simulated")
+  users          users          @relation(fields: [userId], references: [id], onDelete: Cascade, map: "FK_users")
+}
+
+enum enumDifficulty {
+  easy
+  medium
+  hard
+}
+
+enum enumType {
+  lei
+  doutrina
+  jurisprudencia
+}
+
+enum enumTypeAccess {
+  default
+  etica
+}
